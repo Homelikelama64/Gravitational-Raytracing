@@ -1,0 +1,10 @@
+[package]
+name = "ray_tracing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cgmath = "0.18.0"
+derive_more = { version = "1.0.0", features = ["full"] }
+rayon = "1.10.0"
+simple_video = { path = "../simple_video" }
