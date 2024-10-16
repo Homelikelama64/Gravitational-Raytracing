@@ -1,8 +1,7 @@
 use ray_tracing::trace_rays;
 use simple_video::*;
 use std::{
-    fs::File,
-    io::{BufWriter, Write},
+    fs::File, hint, io::{BufWriter, Write}
 };
 
 fn main() {
@@ -37,6 +36,17 @@ fn main() {
         }
     }
     file.flush().unwrap();
+
+    let mut video: Video = Video {
+        width: width as u16,
+        height: height as u16,
+        frame_count: 1,
+        fps: 1,
+        frames: vec![],
+        version: 0
+    };
+    video.add_frame(&pixels);
+    video.write_to_file("output".to_string());
 
     println!("Done.");
 }

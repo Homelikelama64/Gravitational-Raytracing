@@ -138,6 +138,7 @@ fn physics(
 }
 
 pub fn trace_rays(pixels: &mut [ColorF32], width: usize, height: usize) {
+
     let pixel_count = pixels.len();
     assert_eq!(pixel_count, width * height);
     let aspect = width as f32 / height as f32;
