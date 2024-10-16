@@ -5,7 +5,7 @@ use std::{
 };
 
 fn main() {
-    let (width, height) = (720, 480);
+    let (width, height) = (1080, 720);
     let mut pixels = vec![
         Color {
             r: 0.0,

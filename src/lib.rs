@@ -118,7 +118,7 @@ fn physics(
     let mut bodies_path: Vec<Vec<Body>> = vec![bodies.clone()];
     let iter_count = (max_distance / dt / light_speed).ceil() as usize;
     for s in 0..iter_count {
-        let mut new_bodies: Vec<Body> = vec![];
+        let mut new_bodies: Vec<Body> = Vec::with_capacity(bodies.len());
         for i in 0..bodies.len() {
             let mut a_body = bodies_path[i32::clamp(s as i32 - 1,0,iter_count as i32) as usize][i].clone();
             for j in 0..bodies.len() {
