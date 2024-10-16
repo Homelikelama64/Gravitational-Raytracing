@@ -149,6 +149,9 @@ dependencies = [
 [[package]]
 name = "simple_video"
 version = "0.1.0"
+dependencies = [
+ "derive_more",
+]
 
 [[package]]
 name = "syn"

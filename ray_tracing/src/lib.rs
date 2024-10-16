@@ -1,25 +1,18 @@
 use cgmath::{vec3, InnerSpace, MetricSpace, Vector3, Zero};
-use derive_more::derive::{Add, AddAssign};
 use rayon::prelude::*;
+use simple_video::*;
 use std::{
     io::Write,
     sync::atomic::{AtomicUsize, Ordering},
     time::{Duration, Instant},
 };
 
-#[derive(Debug, Clone, Copy, Add, AddAssign)]
-pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-}
 #[derive(Clone, Debug)]
 struct Body {
     pos: Vector3<f32>,
     vel: Vector3<f32>,
-    offset: f32,
     radius: f32,
-    color: Color,
+    color: ColorF32,
     mass: f32,
 }
 
@@ -32,7 +25,7 @@ fn trace_ray(
     light_speed: f32,
     gravity_strength: f32,
     dt: f32,
-) -> Color {
+) -> ColorF32 {
     // let gravity_strength = 1.0;
     // let light_speed = 1.0;
 
@@ -64,7 +57,7 @@ fn trace_ray(
 
                 // black hole pull is greater than light speed, the light cannot escape
                 if gravity > light_speed {
-                    return Color {
+                    return ColorF32 {
                         r: 0.0,
                         g: 0.0,
                         b: 0.0,
@@ -81,13 +74,14 @@ fn trace_ray(
         photon_pos += photon_dir * dt;
     }
 
-    return Color {
+    return ColorF32 {
         r: 0.1,
         g: 0.1,
         b: 0.1,
     };
 }
 
+#[allow(dead_code)]
 trait Lerp {
     fn lerp(a: Self, b: Self, t: f32) -> Self;
 }
@@ -143,7 +137,7 @@ fn physics(
     return bodies_path;
 }
 
-pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
+pub fn trace_rays(pixels: &mut [ColorF32], width: usize, height: usize) {
     let pixel_count = pixels.len();
     assert_eq!(pixel_count, width * height);
     let aspect = width as f32 / height as f32;
@@ -157,9 +151,8 @@ pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
         Body {
             pos: vec3(0.0, 0.0, 0.0),
             vel: vec3(0.0, 0.0, 0.0),
-            offset: 0.0,
             radius: 0.0,
-            color: Color {
+            color: ColorF32 {
                 r: 1.0,
                 g: 1.0,
                 b: 0.0,
@@ -169,9 +162,8 @@ pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
         Body {
             pos: vec3(0.0, 1.2, 0.0),
             vel: vec3(1.0, 0.0, 0.0),
-            offset: 0.0,
             radius: 0.05,
-            color: Color {
+            color: ColorF32 {
                 r: 1.0,
                 g: 1.0,
                 b: 0.0,
@@ -194,7 +186,7 @@ pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
 
                 let samples_resolution = 1;
 
-                let mut samples_color = Color {
+                let mut samples_color = ColorF32 {
                     r: 0.0,
                     g: 0.0,
                     b: 0.0,
@@ -219,7 +211,7 @@ pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
                         );
                     }
                 }
-                *color = Color {
+                *color = ColorF32 {
                     r: samples_color.r / (samples_resolution * samples_resolution) as f32,
                     g: samples_color.g / (samples_resolution * samples_resolution) as f32,
                     b: samples_color.b / (samples_resolution * samples_resolution) as f32,
