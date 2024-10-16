@@ -5,7 +5,7 @@ use std::{
 };
 
 fn main() {
-    let (width, height) = (1920, 1080);
+    let (width, height) = (720, 480);
     let mut pixels = vec![
         Color {
             r: 0.0,
@@ -16,7 +16,8 @@ fn main() {
     ];
 
     trace_rays(&mut pixels, width, height);
-
+    println!("Done.");
+    
     println!("Writing Image...");
     let mut file = BufWriter::new(File::create("output.ppm").unwrap());
     writeln!(file, "P6").unwrap();

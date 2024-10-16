@@ -13,44 +13,35 @@ pub struct Color {
     pub g: f32,
     pub b: f32,
 }
+#[derive(Clone,Debug)]
+struct Body {
+    pos: Vector3<f32>,
+    vel: Vector3<f32>,
+    offset: f32,
+    radius: f32,
+    color: Color,
+    mass: f32,
+}
 
-
-fn trace_ray(x: f32, y: f32, aspect: f32) -> Color {
-    struct Body {
-        pos: Vector3<f32>,
-        start_pos: Vector3<f32>,
-        end_pos: Vector3<f32>,
-        offset: f32,
-        radius: f32,
-        color: Color,
-        mass: f32,
-    }
-
-    let mut bodies = [
-        Body {
-            pos: vec3(0.0, 0.0, 0.0),
-            start_pos: vec3(0.0, 100.0, 5.0),
-            end_pos: vec3(0.0, -100.0, 5.0),
-            offset: 0.10,
-            radius: 1.0,
-            color: Color {
-                r: 1.0,
-                g: 1.0,
-                b: 0.0,
-            },
-            mass: 3.0,
-        },
-    ];
-
-    let gravity_strength = 1.0;
-    let light_speed = 1.0;
+fn trace_ray(
+    x: f32,
+    y: f32,
+    aspect: f32,
+    bodies_path: &Vec<Vec<Body>>,
+    max_distance: f32,
+    light_speed: f32,
+    gravity_strength: f32,
+    dt: f32,
+) -> Color {
+    // let gravity_strength = 1.0;
+    // let light_speed = 1.0;
 
     let mut photon_pos = vec3(0.0, 0.0, -10.0);
     let mut photon_dir =
         vec3((x * 2.0 - 1.0) * aspect, y * 2.0 - 1.0, 1.0).normalize_to(light_speed);
 
-    let max_distance = 40.0;
-    let dt = 0.05;
+    // let max_distance = 40.0;
+    // let dt = 0.05;
 
     let iter_count = (max_distance / dt / light_speed).ceil() as usize;
     let simulation_length = iter_count as f32 * dt;
@@ -61,12 +52,9 @@ fn trace_ray(x: f32, y: f32, aspect: f32) -> Color {
         elapsed_time += dt;
         let time = simulation_length - elapsed_time;
         let simulation_percent = time / simulation_length;
-        for body in &mut bodies {
-            body.pos = Vector3::lerp(
-                body.start_pos,
-                body.end_pos,
-                simulation_percent - body.offset,
-            );
+        let bodies =
+            &bodies_path[f32::floor(bodies_path.len() as f32 * simulation_percent) as usize];
+        for body in bodies {
             if photon_pos.distance2(body.pos) < body.radius * body.radius {
                 return body.color;
             }
@@ -94,9 +82,9 @@ fn trace_ray(x: f32, y: f32, aspect: f32) -> Color {
     }
 
     return Color {
-        r: total_force_of_gravity.x,
-        g: total_force_of_gravity.y,
-        b: total_force_of_gravity.z,
+        r: 0.1,
+        g: 0.1,
+        b: 0.1,
     };
 }
 
@@ -120,11 +108,79 @@ impl Lerp for Vector3<f32> {
     }
 }
 
+fn physics(
+    bodies: &Vec<Body>,
+    dt: f32,
+    max_distance: f32,
+    light_speed: f32,
+    gravity_strength: f32,
+) -> Vec<Vec<Body>> {
+    let mut bodies_path: Vec<Vec<Body>> = vec![bodies.clone()];
+    let iter_count = (max_distance / dt / light_speed).ceil() as usize;
+    for s in 0..iter_count {
+        let mut new_bodies: Vec<Body> = vec![];
+        for i in 0..bodies.len() {
+            let mut a_body = bodies_path[i32::clamp(s as i32 - 1,0,iter_count as i32) as usize][i].clone();
+            for j in 0..bodies.len() {
+                if i != j {
+                    let b_body = bodies_path[i32::clamp(s as i32 - 1,0,iter_count as i32) as usize][j].clone();
+                    if b_body.mass != 0.0 {
+                        a_body.vel += (b_body.pos - a_body.pos).normalize()
+                            * (gravity_strength * b_body.mass
+                                / (b_body.pos - a_body.pos).magnitude2()) * dt
+                    }
+                }
+            }
+            a_body.pos += a_body.vel * dt;
+            new_bodies.push(a_body);
+        }
+        bodies_path.push(new_bodies);
+    }
+    return bodies_path;
+}
+
 pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
     let pixel_count = pixels.len();
     assert_eq!(pixel_count, width * height);
     let aspect = width as f32 / height as f32;
 
+    let dt = 0.01;
+    let max_distance = 40.0;
+    let light_speed = 1.0;
+    let gravity_strength = 1.0;
+
+    let bodies: Vec<Body> = vec![
+        Body {
+            pos: vec3(0.0, 0.0, 0.0),
+            vel: vec3(0.0, 0.0, 0.0),
+            offset: 0.0,
+            radius: 0.0,
+            color: Color {
+                r: 1.0,
+                g: 1.0,
+                b: 0.0,
+            },
+            mass: 1.0,
+        },
+        Body {
+            pos: vec3(0.0, 1.2, 0.0),
+            vel: vec3(1.0, 0.0, 0.0),
+            offset: 0.0,
+            radius: 0.05,
+            color: Color {
+                r: 1.0,
+                g: 1.0,
+                b: 0.0,
+            },
+            mass: 0.0,
+        },
+    ];
+    println!("Simulating Bodies");
+    let bodies_path = physics(&bodies, dt, max_distance, light_speed, gravity_strength);
+    println!("Done.");
+    println!("Simulating Light");
+    //dbg!(&bodies_path);
+    
     let start = Instant::now();
     let completed_pixels = AtomicUsize::new(0);
     std::thread::scope(|s| {
@@ -132,7 +188,7 @@ pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
             pixels.par_iter_mut().enumerate().for_each(|(i, color)| {
                 let (x, y) = (i % width, i / width);
 
-                let samples_resolution = 4;
+                let samples_resolution = 1;
 
                 let mut samples_color = Color {
                     r: 0.0,
@@ -147,7 +203,16 @@ pub fn trace_rays(pixels: &mut [Color], width: usize, height: usize) {
                             (y as f32 + (y_offset as f32 + 0.5) / samples_resolution as f32)
                                 / height as f32,
                         );
-                        samples_color += trace_ray(x, y, aspect);
+                        samples_color += trace_ray(
+                            x,
+                            y,
+                            aspect,
+                            &bodies_path,
+                            max_distance,
+                            light_speed,
+                            gravity_strength,
+                            dt,
+                        );
                     }
                 }
                 *color = Color {
