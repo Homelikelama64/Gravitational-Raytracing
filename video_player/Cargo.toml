@@ -1,0 +1,8 @@
+[package]
+name = "video_player"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+simple_video = { path = "../simple_video" }
