@@ -39,21 +39,16 @@ impl Video {
         }
         self.frames.push(new_frame);
     }
-    pub fn write_to_file(&self, path:String) {
+    pub fn write_to_file(&self, path: String) {
         let mut bytes: Vec<u8> = vec![];
         let width = u16_to_u8s(self.width);
         let height = u16_to_u8s(self.height);
         bytes.push('s' as u8);
         bytes.push('i' as u8);
         bytes.push('m' as u8);
-        bytes.push('p' as u8);
-        bytes.push('l' as u8);
-        bytes.push('e' as u8);
         bytes.push('v' as u8);
         bytes.push('i' as u8);
         bytes.push('d' as u8);
-        bytes.push('e' as u8);
-        bytes.push('o' as u8);
         bytes.push('v' as u8);
         bytes.push(self.version);
         bytes.push(width.0);
@@ -75,9 +70,20 @@ impl Video {
     }
 }
 
+pub fn read_file(path: String) {
+    let bytes = std::fs::read(path).unwrap();
+    let data = bytes.split_at(6);
+    let data = (data.0.to_vec(),data.1.to_vec());
+    if String::from_utf8(data.0.clone()).unwrap() == "simvid" {
+        let version = &data.1[1];
+        let width = u8s_to_u16((&data.1[2],&data.1[3]));
+        let hieght = u8s_to_u16((&data.1[4],&data.1[5]));
+    }
+}
+
 impl ColorU8 {
     pub fn to_bytes(&self) -> Vec<u8> {
-        return vec![self.r,self.g,self.b]
+        return vec![self.r, self.g, self.b];
     }
 }
 
@@ -95,6 +101,12 @@ impl ColorF32 {
 #[allow(unused)]
 fn u16_to_u8s(value: u16) -> (u8, u8) {
     return ((value >> 8) as u8, value as u8);
+}
+
+#[allow(unused)]
+fn u8s_to_u16(tokens: (&u8,&u8)) -> u16 {
+    let value:u16 = 0;
+    return value + *tokens.1 as u16 + ((*tokens.0 as u16) << 8);
 }
 
 #[allow(unused)]

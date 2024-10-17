@@ -1,11 +1,11 @@
 use ray_tracing::trace_rays;
 use simple_video::*;
 use std::{
-    fs::File, hint, io::{BufWriter, Write}
+    fs::File, io::{BufWriter, Write}
 };
 
 fn main() {
-    let (width, height) = (1080, 720);
+    let (width, height) = (720, 480);
     let mut pixels = vec![
         ColorF32 {
             r: 0.0,
@@ -47,6 +47,8 @@ fn main() {
     };
     video.add_frame(&pixels);
     video.write_to_file("output".to_string());
+
+    read_file("C:/dev/Rust/Gravitational-Raytracing/output.simplevideo".to_string());
 
     println!("Done.");
 }

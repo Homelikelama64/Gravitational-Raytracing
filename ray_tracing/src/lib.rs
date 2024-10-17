@@ -166,6 +166,39 @@ pub fn trace_rays(pixels: &mut [ColorF32], width: usize, height: usize) {
             radius: 0.05,
             color: ColorF32 {
                 r: 1.0,
+                g: 0.0,
+                b: 0.0,
+            },
+            mass: 0.0,
+        },
+        Body {
+            pos: vec3(1.2, 0.0, 0.0),
+            vel: vec3(0.0, 1.0, 0.0),
+            radius: 0.05,
+            color: ColorF32 {
+                r: 0.0,
+                g: 1.0,
+                b: 0.0,
+            },
+            mass: 0.0,
+        },
+        Body {
+            pos: vec3(0.0, -1.2, 0.0),
+            vel: vec3(-1.0, 0.0, 0.0),
+            radius: 0.05,
+            color: ColorF32 {
+                r: 0.0,
+                g: 0.0,
+                b: 1.0,
+            },
+            mass: 0.0,
+        },
+        Body {
+            pos: vec3(-1.2, 0.0, 0.0),
+            vel: vec3(0.0, -1.0, 0.0),
+            radius: 0.05,
+            color: ColorF32 {
+                r: 1.0,
                 g: 1.0,
                 b: 0.0,
             },
