@@ -39,7 +39,10 @@ fn main() {
     file.flush().unwrap();
 
     let mut vid = Video::new(width as u32, height as u32, 1);
-    vid.append_frame(pixels.into_iter().map(Into::into));
+    vid.append_frame(pixels.clone().into_iter().map(Into::into));
+    vid.append_frame(pixels.clone().into_iter().map(Into::into));
+    vid.append_frame(pixels.clone().into_iter().map(Into::into));
+    vid.append_frame(pixels.clone().into_iter().map(Into::into));
     write_video_to_file(&vid, "output.simvid").unwrap();
     dbg!(vid[0][0]);
 
