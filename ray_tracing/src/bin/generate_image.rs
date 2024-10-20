@@ -1,4 +1,5 @@
-use ray_tracing::trace_rays;
+use cgmath::vec3;
+use ray_tracing::{trace_rays, Body, Universe};
 use simple_video::*;
 use std::{
     fs::File,
@@ -16,7 +17,29 @@ fn main() {
         width * height
     ];
 
-    trace_rays(&mut pixels, width, height);
+    trace_rays(
+        &mut pixels,
+        width,
+        height,
+        Universe::new(
+            1.0,
+            vec![Body {
+                pos: vec3(0.0, 0.0, 0.0),
+                vel: vec3(0.0, 0.1, 0.0),
+                radius: 1.0,
+                color: ColorF32 {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 1.0,
+                },
+                mass: 1.0,
+            }],
+            40.0,
+            1.0,
+            1.0,
+            0.01,
+        ),
+    );
     println!("Done.");
 
     println!("Writing Image...");
@@ -38,13 +61,12 @@ fn main() {
     }
     file.flush().unwrap();
 
-    let mut vid = Video::new(width as u32, height as u32, 1);
-    vid.append_frame(pixels.iter().copied().map(Into::into));
-    vid.append_frame(pixels.iter().copied().map(Into::into));
-    vid.append_frame(pixels.iter().copied().map(Into::into));
-    vid.append_frame(pixels.iter().copied().map(Into::into));
-    write_video_to_file(&vid, "output.simvid").unwrap();
-    dbg!(vid[0][0]);
+    //let mut vid = Video::new(width as u32, height as u32, 1);
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //write_video_to_file(&vid, "output.simvid").unwrap();
 
     println!("Done.");
 }
