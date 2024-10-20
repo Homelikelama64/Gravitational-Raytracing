@@ -1,4 +1,5 @@
-use ray_tracing::trace_rays;
+use cgmath::vec3;
+use ray_tracing::{trace_rays, Body, Universe};
 use simple_video::*;
 use std::{
     fs::File,
@@ -6,7 +7,7 @@ use std::{
 };
 
 fn main() {
-    let (width, height) = (720, 480);
+    let (width, height) = (500, 250);
     let mut pixels = vec![
         ColorF32 {
             r: 0.0,
@@ -15,9 +16,40 @@ fn main() {
         };
         width * height
     ];
+    let mut universe = Universe::new(
+        0.0,
+        40.0,
+        vec![Body {
+            pos: vec3(-50.0, 0.0, 0.0),
+            vel: vec3(5.0, 0.0, 0.0),
+            radius: 1.0,
+            color: ColorF32 {
+                r: 1.0,
+                g: 1.0,
+                b: 0.0,
+            },
+            mass: 0.0,
+        }],
+        20.0,
+        1.0,
+        1.0,
+        0.01,
+    );
+    let mut vid = Video::new(width as u32, height as u32, 20);
 
-    trace_rays(&mut pixels, width, height);
-    println!("Done.");
+    for i in 0..(universe.animation_length * vid.fps() as f32) as usize {
+        let time = i as f32 * (1.0 / vid.fps() as f32);
+        universe.time = time;
+        trace_rays(
+            &mut pixels,
+            width,
+            height,
+            &universe
+        );
+        vid.append_frame(pixels.iter().copied().map(Into::into));
+        println!("{:.2}%",i as f32 / (universe.animation_length * vid.fps() as f32) * 100.0);
+    }
+    write_video_to_file(&vid, "TestFile.simvid").unwrap();
 
     println!("Writing Image...");
     let mut file = BufWriter::new(File::create("output.ppm").unwrap());
@@ -38,13 +70,12 @@ fn main() {
     }
     file.flush().unwrap();
 
-    let mut vid = Video::new(width as u32, height as u32, 1);
-    vid.append_frame(pixels.clone().into_iter().map(Into::into));
-    vid.append_frame(pixels.clone().into_iter().map(Into::into));
-    vid.append_frame(pixels.clone().into_iter().map(Into::into));
-    vid.append_frame(pixels.clone().into_iter().map(Into::into));
-    write_video_to_file(&vid, "output.simvid").unwrap();
-    dbg!(vid[0][0]);
+    //let mut vid = Video::new(width as u32, height as u32, 1);
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //vid.append_frame(pixels.iter().copied().map(Into::into));
+    //write_video_to_file(&vid, "output.simvid").unwrap();
 
     println!("Done.");
 }

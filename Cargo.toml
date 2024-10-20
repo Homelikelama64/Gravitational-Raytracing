@@ -1,3 +1,3 @@
 [workspace]
-members = ["ray_tracing", "simple_video", "video_player"]
+members = ["ray_tracing", "simple_video", "video_player_eframe"]
 resolver = "2"
