@@ -3,7 +3,8 @@ use simple_video::*;
 use std::{
     env,
     ffi::{CStr, CString},
-    fmt::format, time::SystemTime,
+    fmt::format,
+    time::SystemTime,
 };
 
 const BOARDER: i32 = 100;
@@ -42,7 +43,7 @@ fn main() {
                 height: 20.0,
             },
             Some(c"0:00"),
-            Some(c"0:00"),
+            Some(CString::new(format!("0:00")).unwrap().as_c_str()),
             &mut percentage,
             0.0,
             1.0,
