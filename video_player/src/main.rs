@@ -3,7 +3,8 @@ use simple_video::*;
 use std::{
     env,
     ffi::{CStr, CString},
-    fmt::format, time::SystemTime,
+    fmt::format,
+    time::SystemTime,
 };
 
 const BOARDER: i32 = 100;
@@ -55,26 +56,37 @@ fn main() {
                     .floor() as usize,
             )
             .unwrap();
-        let screen_width = (video.width() as f32 * scale) as i32;
-        let screen_height = (video.height() as f32 * scale) as i32;
-        for x in 0..screen_width {
-            for y in 0..screen_height {
-                let index = x + y * screen_width;
-                let sample_index = ((index % screen_width) as f32 / scale).floor() as i32
-                    + (((index / screen_width) as f32 / scale).floor() as i32
-                        * video.width() as i32);
-                let coloru8 = frame[sample_index as usize];
-                let x = x + ((width as f32 - video.width() as f32 * scale) / 2.0) as i32;
-                let y = y
-                    + ((height as f32 - BOARDER as f32 + 20.0 - video.height() as f32 * scale)
-                        / 2.0) as i32;
-                d.draw_pixel(
-                    x as i32,
-                    y as i32,
-                    Color::new(coloru8.r, coloru8.g, coloru8.b, 255),
-                );
+        let time = SystemTime::now();
+        let (sender, receiver) = std::sync::mpsc::channel::<(Image,i32)>();
+        rayon::scope(|s| {
+            let screen_width = (video.width() as f32 * scale) as i32;
+            let screen_height = (video.height() as f32 * scale) as i32;
+            for x in 0..screen_width {
+                let video = &video;
+                s.spawn(move |_| {
+                    let mut texture =
+                        Image::gen_image_color(1, screen_height, Color::new(255, 0, 255, 255));
+                    for y in 0..screen_height {
+                        let index = x + y * screen_width;
+                        let sample_index = ((index % screen_width) as f32 / scale).floor() as i32
+                            + (((index / screen_width) as f32 / scale).floor() as i32
+                                * video.width() as i32);
+                        let coloru8 = frame[sample_index as usize];
+                        // let x = x + ((width as f32 - video.width() as f32 * scale) / 2.0) as i32;
+                        // let y = y
+                        //     + ((height as f32 - BOARDER as f32 + 20.0
+                        //         - video.height() as f32 * scale)
+                        //         / 2.0) as i32;
+                    }
+                    sender.send((texture,x)).unwrap()
+                });
             }
-        }
+            drop(sender);
+            for (image,x) in receiver {
+
+            }
+        });
+        dbg!(time.elapsed().unwrap().as_millis());
 
         d.draw_text(
             format!("FPS: {:.2}", 1.0 / dt).as_str(),
