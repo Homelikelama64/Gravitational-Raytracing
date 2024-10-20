@@ -23,6 +23,7 @@ fn main() {
         height,
         Universe::new(
             1.0,
+            1.0,
             vec![Body {
                 pos: vec3(0.0, 0.0, 0.0),
                 vel: vec3(0.0, 0.1, 0.0),

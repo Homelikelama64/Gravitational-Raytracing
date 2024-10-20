@@ -28,6 +28,7 @@ pub struct Universe {
 
 impl Universe {
     pub fn new(
+        time:f32,
         animation_length: f32,
         body_start_positions: Vec<Body>,
         max_distance: f32,
@@ -82,7 +83,7 @@ impl Universe {
         }
 
         return Universe {
-            time: 0.0,
+            time: time,
             animation_length,
             bodies_path,
             max_distance,
