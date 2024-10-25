@@ -33,17 +33,13 @@ fn main() {
     }
     println!("\nDone at: {}", { Local::now().to_rfc2822() });
     println!("Writing Video");
+    let name = Path::new(&path).file_name().unwrap().to_str().unwrap();
     let mut trimmed_path = path.clone();
-    let _ = trimmed_path.split_off(
-        path.len()
-            - Path::new(&path)
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .len()
-            - 1,
-    );
+    if name.len() < path.len() {
+        let _ = trimmed_path.split_off(path.len() - name.len() - 1);
+    }else {
+        trimmed_path = "".to_string();
+    }
     write_video_to_file(&vid, trimmed_path + "/output.simvid").unwrap();
     println!("Done.");
 }

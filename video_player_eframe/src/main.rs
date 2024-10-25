@@ -1,4 +1,7 @@
-use eframe::{egui, egui_wgpu, wgpu};
+use eframe::{
+    egui::{self, vec2, Pos2, Rect},
+    egui_wgpu, wgpu,
+};
 use simple_video::{read_video_from_file, Video};
 
 fn main() {
@@ -97,38 +100,59 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let mut slider_changed = false;
 
-        egui::Window::new("Settings").show(ctx, |ui| {
-            ui.label(format!("Frame Count: {}", self.video.frame_count()));
-            ui.horizontal(|ui| {
-                ui.label("Frame Index: ");
-                slider_changed = ui
-                    .add(egui::Slider::new(
-                        &mut self.frame_index,
-                        0..=self.video.frame_count().saturating_sub(1),
-                    ))
-                    .changed();
+        let window_size = ctx.input(|i: &egui::InputState| i.screen_rect());
+
+        let mut scale = (window_size.height() as f32 - 100.0) / self.texture.size().height as f32;
+        if self.texture.size().width as f32 * scale + 40.0 > window_size.width() as f32 {
+            scale = (window_size.width() as f32 - 40.0) / self.texture.size().width as f32
+        }
+
+        let pos = vec2(
+            (window_size.width() - self.texture.size().width as f32 * scale + 10.0) / 2.0,
+            (window_size.height() - self.texture.size().height as f32 * scale - 80.0) / 2.0,
+        ) - vec2(5.0, 5.0);
+
+        egui::Window::new("Settings")
+            .default_pos(Pos2 {
+                x: 30.0,
+                y: 900.0,
+            })
+            .show(ctx, |ui| {
+                ui.label(format!("Frame Count: {}", self.video.frame_count()));
+                ui.horizontal(|ui| {
+                    ui.label("Frame Index: ");
+                    slider_changed = ui
+                        .add(egui::Slider::new(
+                            &mut self.frame_index,
+                            0..=self.video.frame_count().saturating_sub(1),
+                        ))
+                        .changed();
+                });
             });
-        });
 
         egui::Window::new("Video")
             .frame(egui::Frame::none())
-            .auto_sized()
+            .anchor(egui::Align2::LEFT_TOP, pos)
+            .title_bar(false)
+            .fixed_size(vec2(
+                self.texture.size().width as f32 * scale,
+                self.texture.size().height as f32 * scale,
+            ))
             .show(ctx, |ui| {
                 let egui_wgpu::RenderState { queue, .. } = frame.wgpu_render_state().unwrap();
-
-                let texture_size = self.texture.size();
-                let (rect, _response) = ui.allocate_exact_size(
-                    egui::vec2(texture_size.width as _, texture_size.height as _),
-                    egui::Sense::drag(),
-                );
 
                 if slider_changed {
                     self.update_texture(queue);
                 }
-
                 ui.painter().image(
                     self.texture_id,
-                    rect,
+                    Rect::from_points(&[
+                        Pos2::new(pos.x, pos.y),
+                        Pos2::new(
+                            self.texture.size().width as f32 * scale + pos.x,
+                            self.texture.size().height as f32 * scale + pos.y,
+                        ),
+                    ]),
                     egui::Rect::from_min_max(egui::pos2(0.0, 1.0), egui::pos2(1.0, 0.0)),
                     egui::Color32::WHITE,
                 );
