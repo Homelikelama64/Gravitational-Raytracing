@@ -1,13 +1,14 @@
-use cgmath::{vec3, InnerSpace, MetricSpace, Vector3, Zero};
+use cgmath::{vec3, InnerSpace, MetricSpace, Vector3};
+use chrono::{Local, TimeDelta};
 use rayon::prelude::*;
 use simple_video::*;
 use std::{
     io::Write,
     sync::atomic::{AtomicUsize, Ordering},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Body {
     pub pos: Vector3<f32>,
     pub vel: Vector3<f32>,
@@ -15,7 +16,7 @@ pub struct Body {
     pub color: ColorF32,
     pub mass: f32,
 }
-
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Universe {
     pub time: f32,
     pub animation_length: f32,
@@ -25,71 +26,79 @@ pub struct Universe {
     pub gravity_strength: f32,
     pub dt: f32,
 }
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct StartConditions {
+    pub width: usize,
+    pub height: usize,
+    pub fps: usize,
+    pub time: f32,
+    pub animation_length: f32,
+    pub bodies: Vec<Body>,
+    pub max_distance: f32,
+    pub light_speed: f32,
+    pub gravity_strength: f32,
+    pub dt: f32,
+}
 
 impl Universe {
-    pub fn new(
-        time:f32,
-        animation_length: f32,
-        body_start_positions: Vec<Body>,
-        max_distance: f32,
-        light_speed: f32,
-        gravity_strength: f32,
-        dt: f32,
-    ) -> Universe {
-        let mut bodies_path: Vec<Vec<Body>> = vec![body_start_positions.clone()];
+    pub fn new(start_conditions: &StartConditions) -> Universe {
+        let mut bodies_path: Vec<Vec<Body>> = vec![start_conditions.bodies.clone()];
 
-        let mut current_bodies = body_start_positions.clone();
+        let mut current_bodies = start_conditions.bodies.clone();
         for body in &mut current_bodies {
             body.vel = -body.vel
         }
-        for _ in 0..(max_distance / dt / light_speed).ceil() as usize {
+        for _ in
+            0..(start_conditions.max_distance / start_conditions.dt / start_conditions.light_speed)
+                .ceil() as usize
+        {
             for a in 0..current_bodies.len() {
                 for b in 0..current_bodies.len() {
                     if a != b {
                         if current_bodies[b].mass != 0.0 {
                             let vel = (current_bodies[b].pos - current_bodies[a].pos).normalize()
-                                * (gravity_strength * current_bodies[b].mass
+                                * (start_conditions.gravity_strength * current_bodies[b].mass
                                     / (current_bodies[b].pos - current_bodies[a].pos).magnitude2());
-                            current_bodies[a].vel += vel * dt;
+                            current_bodies[a].vel += vel * start_conditions.dt;
                         }
                     }
                 }
-                let vel = current_bodies[a].vel * dt;
+                let vel = current_bodies[a].vel * start_conditions.dt;
                 current_bodies[a].pos += vel;
             }
-            let mut new_vec:Vec<Vec<Body>> = vec![current_bodies.clone()];
+            let mut new_vec: Vec<Vec<Body>> = vec![current_bodies.clone()];
             new_vec.append(&mut bodies_path.clone());
             bodies_path = new_vec.clone();
         }
 
-        let mut current_bodies = body_start_positions.clone();
+        let mut current_bodies = start_conditions.bodies.clone();
 
-        for _ in 0..(animation_length / dt) as usize {
+        for _ in 0..(start_conditions.animation_length / start_conditions.dt) as usize {
             for a in 0..current_bodies.len() {
                 for b in 0..current_bodies.len() {
                     if a != b {
                         if current_bodies[b].mass != 0.0 {
                             let vel = (current_bodies[b].pos - current_bodies[a].pos).normalize()
-                                * (gravity_strength * current_bodies[b].mass
+                                * (start_conditions.gravity_strength * current_bodies[b].mass
                                     / (current_bodies[b].pos - current_bodies[a].pos).magnitude2());
-                            current_bodies[a].vel += vel * dt;
+                            current_bodies[a].vel += vel * start_conditions.dt;
                         }
                     }
                 }
-                let vel = current_bodies[a].vel * dt;
+                let vel = current_bodies[a].vel * start_conditions.dt;
                 current_bodies[a].pos += vel;
             }
             bodies_path.append(&mut vec![current_bodies.clone()]);
         }
 
         return Universe {
-            time: time,
-            animation_length,
-            bodies_path,
-            max_distance,
-            light_speed,
-            gravity_strength,
-            dt,
+            time: start_conditions.time,
+            animation_length: start_conditions.animation_length,
+            bodies_path: bodies_path,
+            max_distance: start_conditions.max_distance,
+            light_speed: start_conditions.light_speed,
+            gravity_strength: start_conditions.gravity_strength,
+            dt: start_conditions.dt,
         };
     }
 
@@ -104,12 +113,13 @@ impl Universe {
             / (self.animation_length + self.light_simulation_length())
     }
     pub fn get_bodies_at_time_percent(&self, time: f32) -> &Vec<Body> {
-        &self.bodies_path[((self.bodies_path.len() as f32 * time) as usize).clamp(0, self.bodies_path.len() - 1)]
+        &self.bodies_path
+            [((self.bodies_path.len() as f32 * time) as usize).clamp(0, self.bodies_path.len() - 1)]
     }
 }
 
 fn trace_ray(x: f32, y: f32, aspect: f32, universe: &Universe) -> ColorF32 {
-    let mut photon_pos = vec3(0.0, 0.0, -10.0);
+    let mut photon_pos = vec3(0.0, 0.0, -5.0);
     let mut photon_dir =
         vec3((x * 2.0 - 1.0) * aspect, y * 2.0 - 1.0, 1.0).normalize_to(universe.light_speed);
 
@@ -151,12 +161,20 @@ fn trace_ray(x: f32, y: f32, aspect: f32, universe: &Universe) -> ColorF32 {
     };
 }
 
-pub fn trace_rays(pixels: &mut [ColorF32], width: usize, height: usize, universe: &Universe) {
+pub fn trace_rays(
+    pixels: &mut [ColorF32],
+    width: usize,
+    height: usize,
+    universe: &Universe,
+    fps: u8,
+    i: usize,
+    start: SystemTime,
+) {
     let pixel_count = pixels.len();
     assert_eq!(pixel_count, width * height);
     let aspect = width as f32 / height as f32;
 
-    let start = Instant::now();
+    let start_frame = Instant::now();
     let completed_pixels = AtomicUsize::new(0);
     std::thread::scope(|s| {
         s.spawn(|| {
@@ -193,16 +211,38 @@ pub fn trace_rays(pixels: &mut [ColorF32], width: usize, height: usize, universe
 
         loop {
             let progress = completed_pixels.load(Ordering::Relaxed);
-            let total_time = start.elapsed();
+            let total_time = start_frame.elapsed();
+
+            let time = start.elapsed().unwrap();
+            let eta = time.as_secs_f32() as f32
+                / ((i as f32 + (progress as f32 / pixel_count as f32))
+                    / (universe.animation_length * fps as f32))
+                - time.as_secs_f32();
+            let time_spent_rendering = time.as_secs_f32();
+            let finish_time = if i == 0 {
+                Local::now()
+            } else {
+                Local::now()
+                    .checked_add_signed(TimeDelta::seconds(eta as i64))
+                    .unwrap()
+            };
             print!(
-                "\rProgress: {:.1}%, Estimated time remaining: {:.1}s            ",
+                "\rProgress: {:.1}%, Time spent on frame: {:.1}s, Animation Progress: {:.0}/{:.0} {:.2}%,Total Time Left: {:.0}:{:.0}:{:.0}, Time Rendering: {:.0}:{:.0}:{:.0}, Finishes At: {}            ",
                 (progress as f32 / pixel_count as f32) * 100.0,
-                total_time.as_secs_f32() / (progress as f32 / pixel_count as f32)
-                    - total_time.as_secs_f32()
+                total_time.as_secs_f32(),
+                i,
+                universe.animation_length * fps as f32,
+                (i as f32 + (progress as f32 / pixel_count as f32)) / (universe.animation_length * fps as f32) * 100.0,
+                (eta / 60.0 /60.0).floor(),
+                (eta / 60.0 % 60.0).floor(),
+                (eta % 60.0).floor(),
+                (time_spent_rendering / 60.0 / 60.0).floor(),
+                (time_spent_rendering / 60.0 % 60.0).floor(),
+                (time_spent_rendering % 60.0).floor(),
+                finish_time.to_rfc2822(),
             );
             std::io::stdout().flush().unwrap();
             if progress >= pixel_count {
-                println!();
                 break;
             }
             std::thread::sleep(Duration::from_millis(1));

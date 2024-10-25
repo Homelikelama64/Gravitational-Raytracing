@@ -110,8 +110,9 @@ impl eframe::App for App {
             });
         });
 
-        egui::CentralPanel::default()
-            .frame(egui::Frame::none().fill(egui::Color32::BLACK))
+        egui::Window::new("Video")
+            .frame(egui::Frame::none())
+            .auto_sized()
             .show(ctx, |ui| {
                 let egui_wgpu::RenderState { queue, .. } = frame.wgpu_render_state().unwrap();
 
@@ -131,6 +132,12 @@ impl eframe::App for App {
                     egui::Rect::from_min_max(egui::pos2(0.0, 1.0), egui::pos2(1.0, 0.0)),
                     egui::Color32::WHITE,
                 );
+            });
+
+        egui::CentralPanel::default()
+            .frame(egui::Frame::none().fill(egui::Color32::BLACK))
+            .show(ctx, |ui| {
+                _ = ui;
             });
     }
 }

@@ -15,7 +15,7 @@ pub struct ColorU8 {
     pub b: u8,
 }
 
-#[derive(Debug, Clone, Copy, Add, AddAssign)]
+#[derive(Debug, Clone, Copy, Add, AddAssign, serde::Serialize,serde::Deserialize)]
 pub struct ColorF32 {
     pub r: f32,
     pub g: f32,
