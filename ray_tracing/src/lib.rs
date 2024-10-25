@@ -134,19 +134,11 @@ fn trace_ray(x: f32, y: f32, aspect: f32, universe: &Universe) -> ColorF32 {
             }
 
             if body.mass != 0.0 {
-                let gravity =
-                    (universe.gravity_strength * body.mass) / body.pos.distance2(photon_pos);
-
-                // black hole pull is greater than light speed, the light cannot escape
-                if gravity > universe.light_speed {
-                    return ColorF32 {
-                        r: 0.0,
-                        g: 0.0,
-                        b: 0.0,
-                    };
-                }
-
-                photon_dir += (body.pos - photon_pos).normalize() * gravity * universe.dt;
+                let a = (4.0 * universe.gravity_strength * body.mass)
+                    / ((universe.light_speed * universe.light_speed)
+                        * photon_pos.distance(body.pos));
+                let tug = a * (body.pos - photon_pos).normalize();
+                photon_dir += tug
             }
         }
         photon_dir = photon_dir.normalize_to(universe.light_speed);
