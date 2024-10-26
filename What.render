@@ -1,0 +1,32 @@
+{
+  "width": 100,
+  "height": 50,
+  "fps": 20,
+  "time": 0.0,
+  "animation_length": 10.0,
+  "bodies": [
+    {
+      "pos": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 10.0
+      },
+      "vel": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "radius": 1.0,
+      "color": {
+        "r": 0.0,
+        "g": 0.0,
+        "b": 0.0
+      },
+      "mass": 1.0
+    }
+  ],
+  "max_distance": 20.0,
+  "light_speed": 2.0,
+  "gravity_strength": 1.0,
+  "dt": 0.01
+}

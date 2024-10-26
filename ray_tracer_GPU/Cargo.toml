@@ -1,0 +1,8 @@
+[package]
+name = "ray_tracer_GPU"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pollster = "0.3.0"
+wgpu = "22.1.0"

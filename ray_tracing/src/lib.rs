@@ -119,27 +119,39 @@ impl Universe {
 }
 
 fn trace_ray(x: f32, y: f32, aspect: f32, universe: &Universe) -> ColorF32 {
-    let mut photon_pos = vec3(0.0, 0.0, -5.0);
+    let mut photon_pos = vec3(0.0, 0.0, 0.0);
     let mut photon_dir =
         vec3((x * 2.0 - 1.0) * aspect, y * 2.0 - 1.0, 1.0).normalize_to(universe.light_speed);
 
     let mut elapsed = 0.0;
-    for _ in 0..universe.light_iter_count() {
+    for i in 0..universe.light_iter_count() {
         elapsed -= universe.dt;
         let time = universe.time + elapsed;
 
+        let iterations_left = universe.light_iter_count() - i;
+        let max_distance = iterations_left as f32 * universe.light_speed * universe.dt;
+
+        let mut close_to_body = false;
         for body in universe.get_bodies_at_time_percent(universe.time_percent(time)) {
-            if photon_pos.distance2(body.pos) < body.radius * body.radius {
+            let dist = photon_pos.distance(body.pos);
+            if dist < max_distance {
+                close_to_body = true;
+            }
+            if dist * dist < body.radius * body.radius {
                 return body.color;
             }
 
             if body.mass != 0.0 {
                 let a = (4.0 * universe.gravity_strength * body.mass)
                     / ((universe.light_speed * universe.light_speed)
-                        * photon_pos.distance(body.pos));
+                        * dist);
                 let tug = a * (body.pos - photon_pos).normalize();
-                photon_dir += tug
+                photon_dir += tug * universe.dt;
+                photon_dir = photon_dir.normalize_to(universe.light_speed);
             }
+        }
+        if close_to_body == false {
+            break;
         }
         photon_dir = photon_dir.normalize_to(universe.light_speed);
 

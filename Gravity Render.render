@@ -1,15 +1,15 @@
 {
-  "width": 150,
-  "height": 100,
-  "fps": 20,
+  "width": 1080,
+  "height": 780,
+  "fps": 60,
   "time": 0.0,
-  "animation_length": 60.0,
+  "animation_length": 120.0,
   "bodies": [
     {
       "pos": {
         "x": 0.0,
         "y": 0.0,
-        "z": 0.0
+        "z": 5.0
       },
       "vel": {
         "x": 0.0,
@@ -28,24 +28,43 @@
       "pos": {
         "x": 3.0,
         "y": 0.0,
-        "z": 0.0
+        "z": 5.0
       },
       "vel": {
         "x": 0.0,
         "y": 0.0,
-        "z": 0.6
+        "z": 1.0
       },
-      "radius": 0.3,
+      "radius": 0.5,
       "color": {
         "r": 1.0,
         "g": 1.0,
         "b": 0.0
       },
-      "mass": 0.0
+      "mass": 0.01
+    },
+    {
+      "pos": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 2.1
+      },
+      "vel": {
+        "x": 1.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "radius": 0.2,
+      "color": {
+        "r": 1.0,
+        "g": 0.0,
+        "b": 0.0
+      },
+      "mass": 0.007
     }
   ],
-  "max_distance": 20.0,
+  "max_distance": 15.0,
   "light_speed": 2.0,
-  "gravity_strength": 2.0,
-  "dt": 0.01
+  "gravity_strength": 3.0,
+  "dt": 0.005
 }
